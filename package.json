@@ -1,0 +1,34 @@
+{
+  "name": "schwag",
+  "version": "0.0.0",
+  "description": "Request and response validation for Swagger APIs defined using JSON schema",
+  "main": "schwag.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bguiz/schwag.git"
+  },
+  "engineStrict": true,
+  "engines": {
+    "node": ">=6.3.1",
+    "yarn": ">=0.19.1"
+  },
+  "keywords": [
+    "swagger",
+    "api",
+    "json-schema",
+    "validation",
+    "express"
+  ],
+  "author": "bguiz",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/bguiz/schwag/issues"
+  },
+  "homepage": "https://github.com/bguiz/schwag#readme",
+  "dependencies": {
+    "ajv": "^4.11.3"
+  }
+}
