@@ -5,8 +5,19 @@ const ajv = require('ajv');
 const schemas = new Map();
 const validator = new ajv();
 
+validator.addFormat('integer', (value) => {
+	// All numbers are floating point in JS, so here we're really just testing that it is a whole number
+	return !isNaN(value) && (Math.floor(value) === value);
+});
+validator.addFormat('double', (value) => {
+	// The base validation already would have checked that `type` is `number`, and they're floating point
+	// This simply flags ajv to skip the warning that would otherwise occur
+	return !isNaN(value);
+});
+
 module.exports = {
 	addSchema,
+	validator,
 	express: swaggerValidateExpress,
 };
 
@@ -15,7 +26,7 @@ module.exports = {
  */
 function addSchema (schema) {
 	const schemaName = schema.info.title;
-	if (validator.get(schemaName)) {
+	if (schemas.get(schemaName)) {
 		throw `Schema with same name has previously been added: ${schemaName}`;
 	}
 	validator.addSchema(schema, schemaName);
@@ -38,6 +49,14 @@ function jsonPointerEscape (str) {
 }
 
 /*
+ * Replaces JSON schema style path parameters (`/{param}`)
+ * with express style path parameters (`/:param`)
+ */
+function expressPathEscape (str) {
+	return str.replace(/\/\{([^\}]+)\}/g, '/:$1');
+}
+
+/*
  * Closure over per-route swagger validation functions
  */
 function swaggerValidateRouteClosure ({
@@ -53,6 +72,7 @@ function swaggerValidateRouteClosure ({
 
 	return {
 		express: {
+			path: expressPathEscape(routePath),
 			request: swaggerRequestExpress,
 			response: swaggerResponseExpress,
 		},
@@ -152,21 +172,36 @@ function swaggerValidateRouteClosure ({
 					typeof value === 'undefined') {
 					// Skip validation when parameter is unspecified, and it is not required
 				} else {
-					switch (routeParam.type) {
-					case 'number':
-						actualValue = isNaN(+value)
-							? value // Pass through original value, will fail validation
-							: (+value);
-						break;
-					case 'boolean':
-						actualValue =
-							(value === 'true' || value === 'false')
-							? (value === 'true')
-							: value; // Pass through original value, will fail validation
-						break;
-					default:
-						// Pass through
+
+					if (typeof value === routeParam.type) {
+						actualValue = value;
+					} else {
+						switch (routeParam.type) {
+						case 'number':
+							actualValue = isNaN(+value)
+								? value // Pass through original value, will fail validation
+								: (+value);
+							break;
+						case 'boolean':
+							actualValue =
+								(value === 'true' || value === 'false')
+								? (value === 'true')
+								: value; // Pass through original value, will fail validation
+							break;
+						case 'string':
+							// To take into account that overly enthusiastic libs such as express
+							// convert strings to numbers whenever they can be
+							actualValue =
+								(typeof value !== 'undefined')
+								? `${value}`
+								: value;
+							break;
+						//NOTE array and object parameters are not handled at all presently
+						default:
+							// Pass through
+						}
 					}
+
 					// Validate input against JSON schema using ajv
 					isValid = validator.validate({
 						'$ref': `${routeSchemaPointer}/parameters/${routeParamIdx}`,
