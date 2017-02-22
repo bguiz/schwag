@@ -162,71 +162,71 @@ function swaggerValidateRouteClosure ({
 			default:
 				matchedIn = false;
 			}
-			if (matchedIn) {
-				if (routeParam.default !== 'undefined' &&
-					typeof value === 'undefined') {
-					actualValue = routeParam.default;
-					// We assume that the default value specified in the schema does not require validation,
-					// as that should have been done when writing the schema itself
-				} else if (routeParam.required === false &&
-					typeof value === 'undefined') {
-					// Skip validation when parameter is unspecified, and it is not required
+			if (!matchedIn) {
+				input.errors.push(`Unrecognised "in" for parameter: ${routeParam.in}`);
+				return;
+			}
+			if (typeof routeParam.default !== 'undefined' &&
+				typeof value === 'undefined') {
+				actualValue = routeParam.default;
+				// We assume that the default value specified in the schema does not require validation,
+				// as that should have been done when writing the schema itself
+			} else if (routeParam.required === false &&
+				typeof value === 'undefined') {
+				// Skip validation when parameter is unspecified, and it is not required
+			} else {
+				if (typeof value === routeParam.type) {
+					actualValue = value;
 				} else {
-
-					if (typeof value === routeParam.type) {
-						actualValue = value;
-					} else {
-						switch (routeParam.type) {
-						case 'number':
-							actualValue = isNaN(+value)
-								? value // Pass through original value, will fail validation
-								: (+value);
-							break;
-						case 'boolean':
-							actualValue =
-								(value === 'true' || value === 'false')
-								? (value === 'true')
-								: value; // Pass through original value, will fail validation
-							break;
-						case 'string':
-							// To take into account that overly enthusiastic libs such as express
-							// convert strings to numbers whenever they can be
-							actualValue =
-								(typeof value !== 'undefined')
-								? `${value}`
-								: value;
-							break;
-						//NOTE array and object parameters are not handled at all presently
-						default:
-							// Pass through
-						}
-					}
-
-					// Validate input against JSON schema using ajv
-					isValid = validator.validate({
-						'$ref': `${routeSchemaPointer}/parameters/${routeParamIdx}`,
-					}, actualValue);
-					if (!isValid) {
-						input.errors.push(validator.errors);
-					} else if (value !== actualValue) {
-						// Update the input appropriately
-						switch (routeParam.in) {
-						case 'query':
-						case 'path':
-							input.params.set(routeParam.name, actualValue);
-							break;
-						case 'header':
-							input.headers.set(routeParam.name, actualValue);
-							break;
-						default:
-							// this does not apply to body
-							// query, path, header, parameters are always received in the request as strings
-							// and we use the schema validation to update them to the appropriate types
-						}
+					switch (routeParam.type) {
+					case 'number':
+						actualValue = isNaN(+value)
+							? value // Pass through original value, will fail validation
+							: (+value);
+						break;
+					case 'boolean':
+						actualValue =
+							(value === 'true' || value === 'false')
+							? (value === 'true')
+							: value; // Pass through original value, will fail validation
+						break;
+					case 'string':
+						// To take into account that overly enthusiastic libs such as express
+						// convert strings to numbers whenever they can be
+						actualValue =
+							(typeof value !== 'undefined')
+							? `${value}`
+							: value;
+						break;
+					//NOTE array and object parameters are not handled at all presently
+					default:
+						// Pass through
 					}
 				}
-			} else {
-				input.errors.push(`Unrecognised "in" for parameter: ${routeParam.in}`);
+
+				// Validate input against JSON schema using ajv
+				isValid = validator.validate({
+					'$ref': `${routeSchemaPointer}/parameters/${routeParamIdx}`,
+				}, actualValue);
+				if (!isValid) {
+					input.errors.push(validator.errors);
+				}
+			}
+			if (value !== actualValue) {
+				// Update the input appropriately
+				switch (routeParam.in) {
+				case 'query':
+				case 'path':
+					input.params.set(routeParam.name, actualValue);
+					break;
+				case 'header':
+					input.headers.set(routeParam.name, actualValue);
+					break;
+				default:
+					// this does not apply to body
+					// query, path, header, parameters are always received in the request as strings
+					// and we use the schema validation to update them to the appropriate types
+				}
 			}
 		});
 
