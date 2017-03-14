@@ -66,7 +66,7 @@ function swaggerValidateRouteClosure ({
 }) {
 	const swaggerSchema = schemas.get(schemaName);
 	const routeDef = swaggerSchema.paths[routePath][routeVerb];
-	const routeParams = routeDef.parameters;
+	const routeParams = routeDef.parameters || [];
 	const routeSchemaPointer =
 		`${schemaName}#/paths/${jsonPointerEscape(routePath)}/${routeVerb}`;
 
