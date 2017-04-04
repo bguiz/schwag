@@ -1,6 +1,6 @@
 {
   "name": "schwag",
-  "version": "0.0.6",
+  "version": "0.1.0",
   "description": "Request and response validation for Swagger APIs defined using JSON schema",
   "main": "schwag.js",
   "scripts": {
