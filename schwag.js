@@ -235,9 +235,14 @@ function swaggerValidateRouteClosure ({
 	function swaggerResponseValidate (input, output, errback) {
 		if (process.env.NODE_ENV !== 'production') {
 			// Validate output against JSON schema using ajv
-			const isValid = validator.validate({
-				'$ref': `${routeSchemaPointer}/responses/${output.status}`,
-			}, output.body);
+			let isValid;
+			if (output.status > 499 && output.status < 600) {
+				isValid = true;
+			} else {
+				isValid = validator.validate({
+					'$ref': `${routeSchemaPointer}/responses/${output.status}`,
+				}, output.body);
+			}
 			if (!isValid) {
 				input.errors.push(validator.errors);
 				output.status = 500;
