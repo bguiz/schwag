@@ -136,6 +136,7 @@ function swaggerValidateRouteClosure ({
 			let value;
 			let actualValue;
 			let matchedIn = true;
+			let validationRefPath;
 			switch (routeParam.in) {
 			case 'query':
 			case 'path':
@@ -146,7 +147,7 @@ function swaggerValidateRouteClosure ({
 				break;
 			case 'body':
 				// body may be defined using a schema
-				value = input.body[routeParam.name];
+				value = input.body;
 				break;
 			default:
 				matchedIn = false;
@@ -155,6 +156,7 @@ function swaggerValidateRouteClosure ({
 				input.errors.push(`Unrecognised "in" for parameter: ${routeParam.in}`);
 				return;
 			}
+			validationRefPath = `${routeSchemaPointer}/parameters/${routeParamIdx}`;
 			if (typeof routeParam.default !== 'undefined' &&
 				typeof value === 'undefined') {
 				actualValue = routeParam.default;
@@ -165,6 +167,9 @@ function swaggerValidateRouteClosure ({
 				// Skip validation when parameter is unspecified, and it is not required
 			} else {
 				if (typeof value === routeParam.type) {
+					actualValue = value;
+				} else if (typeof routeParam.schema === 'object') {
+					validationRefPath = `${validationRefPath}/schema`;
 					actualValue = value;
 				} else {
 					switch (routeParam.type) {
@@ -195,7 +200,7 @@ function swaggerValidateRouteClosure ({
 
 				// Validate input against JSON schema using ajv
 				isValid = validator.validate({
-					'$ref': `${routeSchemaPointer}/parameters/${routeParamIdx}`,
+					'$ref': validationRefPath,
 				}, actualValue);
 				if (!isValid) {
 					input.errors.push(validator.errors);
