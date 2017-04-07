@@ -203,7 +203,7 @@ function swaggerValidateRouteClosure ({
 					'$ref': validationRefPath,
 				}, actualValue);
 				if (!isValid) {
-					input.errors.push(validator.errors);
+					input.errors.push(...validator.errors);
 				}
 			}
 			if (value !== actualValue) {
