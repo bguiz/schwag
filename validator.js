@@ -15,7 +15,7 @@ validator.addFormat('double', (value) => {
 });
 // Custom validation keywords so that we can use
 // buffers and stream in validation schema
-ajvInstance.addKeyword('buffer', {
+validator.addKeyword('buffer', {
 	compile: () => {
 		return (data) => {
 			return Buffer.isBuffer(data);
