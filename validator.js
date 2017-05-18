@@ -13,5 +13,44 @@ validator.addFormat('double', (value) => {
 	// This simply flags ajv to skip the warning that would otherwise occur
 	return !isNaN(value);
 });
-
+// Custom validation keywords so that we can use
+// buffers and stream in validation schema
+validator.addKeyword('buffer', {
+	compile: () => {
+		return (data) => {
+			return Buffer.isBuffer(data);
+		};
+	},
+});
+validator.addKeyword('readableStream', {
+	compile: () => {
+		return (data) => {
+			return isReadableStream(data);
+		};
+	},
+});
+validator.addKeyword('writeableStream', {
+	compile: () => {
+		return (data) => {
+			return isWriteableStream(data);
+		};
+	},
+});
+function isStream (obj) {
+	return obj &&
+		(typeof obj === 'object') &&
+		(typeof obj.pipe === 'function');
+}
+function isReadableStream (obj) {
+	return isStream(obj) &&
+		(obj.readable !== false) &&
+		(typeof obj._read === 'function') &&
+		(typeof obj._readableState === 'object');
+}
+function isWriteableStream (obj) {
+	return isStream(obj) &&
+		(obj.writable !== false) &&
+		(typeof obj._write === 'function') &&
+		(typeof obj._writableState === 'object');
+}
 module.exports = validator;
